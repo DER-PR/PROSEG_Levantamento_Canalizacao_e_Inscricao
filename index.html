@@ -45,7 +45,9 @@
   .matsel button:last-child{border-right:none}
   .matsel button.on{background:var(--verde);color:#fff}
   .item .mtag{display:inline-block;font-size:11px;font-weight:800;padding:2px 7px;border-radius:6px;background:var(--cinza-cl);color:var(--cinza-esc);margin-left:6px;vertical-align:middle}
-  .item .mtag.TE{background:#e3eef7;color:#1c5a86} .item .mtag.PF{background:#f3ece2;color:#7a5320}
+  .item .mtag.TE{background:#e3eef7;color:#1c5a86} .item .mtag.PF{background:#f3ece2;color:#7a5320} .item .mtag.RA{background:#e8f0e6;color:#3a6b2f} .item .mtag.NI{background:#eee;color:#777}
+  .item .sub.eixodif{color:#a8600c;font-weight:700;margin-top:3px}
+  .ctx .eixobanner{margin-top:8px;background:#fbe7d2;color:#8a4b06;border-radius:8px;padding:9px 11px;font-size:13px;font-weight:600;line-height:1.4}
   .chip b{margin-left:4px;opacity:.8}
   /* selecionar levantamento */
   .lev{display:flex;align-items:center;gap:12px;background:#fff;border-radius:12px;box-shadow:var(--sombra);padding:14px;margin-bottom:10px;cursor:pointer;border-left:5px solid var(--verde)}
@@ -259,6 +261,11 @@ async function abrirLevantamento(arquivo){
 }
 async function persist(){ if(levAtual) await idbPut("trab",levAtual.arquivo,itens); }
 
+/* ====== Eixo / interseções ====== */
+function fmtEixo(s){return (s||"").trim().replace(/\s+/g,"-").replace(/-+/g,"-");}
+function normEixo(s){return fmtEixo(s).toUpperCase().replace(/^PRC-/,"PR-");}
+function eixoBaseAtual(){return normEixo(((levAtual&&levAtual.rodovia)||"").replace(/\s*\(.*\)\s*/,""));}
+function eixoDifere(it){var e=normEixo(it.eixo);return e!=="" && e!==eixoBaseAtual();}
 /* ====== Lista ====== */
 function renderMatSel(){
   var el=document.getElementById("matSel");
@@ -294,11 +301,12 @@ function renderLista(){
   alvo.innerHTML=arr.map(function(it){
     var cls=it.estado||"";
     var badge=it.estado?EST[it.estado]:"Avaliar";
-    var sub=FAMNOME[it.familia]+" · "+it.area+" m² · "+it.nLin+" linha"+(it.nLin>1?"s":"");
+    var sub=FAMNOME[it.familia]+" · "+it.area+" m² · "+it.nLin+" linha"+(it.nLin>1?"s":"")+" · Eixo "+esc(fmtEixo(it.eixo)||"--");
     var mtag=(materiais.length>1)?'<span class="mtag '+it.mat+'">'+esc(it.mat)+'</span>':'';
+    var difLine=eixoDifere(it)?'<div class="sub eixodif">⚠ Eixo '+esc(fmtEixo(it.eixo))+' — km desta interseção, não da '+esc(eixoBaseAtual())+'</div>':'';
     return '<div class="item '+cls+'" onclick="abrirAval(\''+it.id+'\')">'+
       '<div class="faixa"></div>'+
-      '<div class="corpo"><div class="tit">'+esc(it.titulo)+mtag+'</div><div class="sub">'+esc(sub)+'</div></div>'+
+      '<div class="corpo"><div class="tit">'+esc(it.titulo)+mtag+'</div><div class="sub">'+sub+'</div>'+difLine+'</div>'+
       '<div class="badge">'+esc(badge)+'</div></div>';
   }).join("");
 }
@@ -312,9 +320,10 @@ function abrirAval(id){
   document.getElementById("avalCtx").innerHTML=
     "<b>"+esc(FAMNOME[it.familia])+"</b>"+
     '<div class="grid"><span>KM: <b>'+esc(faixaKm)+'</b></span><span>Área: <b>'+esc(it.area)+'</b> m²</span>'+
-    '<span>Linhas projeto: <b>'+it.nLin+'</b></span><span>Eixo: <b>'+esc(it.eixo||"--")+'</b></span>'+
+    '<span>Linhas projeto: <b>'+it.nLin+'</b></span><span>Eixo: <b>'+esc(fmtEixo(it.eixo)||"--")+'</b></span>'+
     '<span>Tipo: <b>'+esc((it.cods||[]).join(", "))+'</b></span>'+
-    '<span>Material: <b>'+esc(it.matNome||"--")+'</b></span></div>';
+    '<span>Material: <b>'+esc(it.matNome||"--")+'</b></span></div>'+
+    (eixoDifere(it)?'<div class="eixobanner">⚠ Interseção: esta sinalização está no eixo <b>'+esc(fmtEixo(it.eixo))+'</b>. O km acima refere-se a essa rodovia, não à '+esc(eixoBaseAtual())+'.</div>':'');
   document.querySelectorAll(".est").forEach(function(b){b.classList.toggle("sel",b.getAttribute("data-e")===estadoSel);});
   document.getElementById("avalObs").value=it.obs||"";
   document.getElementById("btnLimparAval").style.display=it.estado?"":"none";

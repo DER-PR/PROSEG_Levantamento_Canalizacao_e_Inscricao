@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="theme-color" content="#0B6B3A">
+<title>PROSEG · Levantamento de Sinalização Horizontal</title>
+<link rel="manifest" href="manifest.webmanifest">
+<style>
+  :root{
+    --verde:#0B6B3A;--verde-esc:#084d2a;--verde-cl:#e6f1ea;
+    --amarelo:#F2B705;--vermelho:#C8362B;--marrom:#8a5a2b;--cinza-esc:#3a4a44;
+    --tinta:#14201a;--cinza:#677770;--cinza-cl:#e7ece9;
+    --fundo:#eef1ef;--branco:#fff;--linha:#d6ddd9;
+    --sombra:0 1px 3px rgba(8,40,24,.10),0 6px 18px rgba(8,40,24,.06);--raio:14px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:var(--fundo);color:var(--tinta);font-size:17px;line-height:1.4;-webkit-text-size-adjust:100%}
+  .app{max-width:560px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+  header{background:var(--verde);color:#fff;padding:14px 16px calc(14px + env(safe-area-inset-bottom,0)) 16px;position:sticky;top:0;z-index:30;box-shadow:var(--sombra)}
+  header .t{font-weight:800;font-size:18px;letter-spacing:.2px}
+  header .s{font-size:13px;opacity:.9;margin-top:2px}
+  main{flex:1;padding:14px;padding-bottom:90px}
+  .esconde{display:none!important}
+  h2{font-size:17px;margin:0 0 12px}
+  .cartao{background:var(--branco);border-radius:var(--raio);box-shadow:var(--sombra);padding:16px;margin-bottom:14px}
+  .dica{font-size:13px;color:var(--cinza);margin:6px 0 12px}
+  .btn{display:block;width:100%;border:none;border-radius:12px;padding:15px;font-size:16px;font-weight:700;cursor:pointer;background:var(--verde-cl);color:var(--verde);text-align:center}
+  .btn-primario{background:var(--verde);color:#fff}
+  .btn-sec{background:#fff;color:var(--cinza);border:2px solid var(--linha)}
+  .btn-linha{background:#fff;color:var(--verde);border:2px solid var(--verde)}
+  .btn+.btn{margin-top:10px}
+  input[type=text],textarea,select{width:100%;padding:13px;font-size:16px;border:2px solid var(--linha);border-radius:10px;background:#fff;color:var(--tinta);font-family:inherit}
+  textarea{min-height:70px;resize:vertical}
+  .campo{font-size:13px;font-weight:700;color:var(--cinza);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px;display:block}
+  .grupo{margin-bottom:14px}
+  .busca{display:flex;gap:8px;margin-bottom:12px}
+  .busca input{flex:1}
+  .filtros{display:flex;gap:7px;overflow-x:auto;margin-bottom:12px;padding-bottom:3px;-webkit-overflow-scrolling:touch}
+  .chip{flex:0 0 auto;border:2px solid var(--linha);background:#fff;color:var(--cinza);border-radius:20px;padding:8px 13px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
+  .chip.ativo{background:var(--verde);color:#fff;border-color:var(--verde)}
+  .chip b{margin-left:4px;opacity:.8}
+  /* selecionar levantamento */
+  .lev{display:flex;align-items:center;gap:12px;background:#fff;border-radius:12px;box-shadow:var(--sombra);padding:14px;margin-bottom:10px;cursor:pointer;border-left:5px solid var(--verde)}
+  .lev .nome{font-weight:800}
+  .lev .det{font-size:13px;color:var(--cinza);margin-top:2px}
+  .lev .selo{margin-left:auto;font-size:11px;font-weight:800;padding:5px 9px;border-radius:20px;white-space:nowrap}
+  .selo.on{background:var(--verde-cl);color:var(--verde)} .selo.off{background:#fdf2e3;color:#a86b12}
+  /* item da lista */
+  .item{display:flex;align-items:stretch;gap:0;background:#fff;border-radius:12px;box-shadow:var(--sombra);margin-bottom:10px;overflow:hidden;cursor:pointer}
+  .item .faixa{flex:0 0 6px;background:var(--linha)}
+  .item.conservada .faixa{background:var(--verde)} .item.desgastada .faixa{background:var(--vermelho)}
+  .item.suja .faixa{background:var(--marrom)} .item.inexistente .faixa{background:var(--cinza-esc)}
+  .item .corpo{flex:1;padding:12px 12px 12px 11px;min-width:0}
+  .item .tit{font-weight:700;font-size:15px}
+  .item .sub{font-size:12.5px;color:var(--cinza);margin-top:3px}
+  .item .badge{align-self:center;margin:0 12px 0 6px;flex:0 0 auto;font-size:11px;font-weight:800;padding:6px 10px;border-radius:20px;white-space:nowrap;background:var(--cinza-cl);color:var(--cinza)}
+  .item.conservada .badge{background:var(--verde-cl);color:var(--verde)}
+  .item.desgastada .badge{background:#fbe7e5;color:var(--vermelho)}
+  .item.suja .badge{background:#f3e8da;color:var(--marrom)}
+  .item.inexistente .badge{background:#e4e8e6;color:var(--cinza-esc)}
+  .vazio{text-align:center;color:var(--cinza);padding:40px 16px;font-size:15px}
+  /* avaliação */
+  .ctx{background:var(--verde-cl);border-radius:10px;padding:13px;margin-bottom:14px;font-size:14px;line-height:1.5}
+  .ctx .grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 14px;margin-top:8px}
+  .ctx b{color:var(--verde-esc)}
+  .estados{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:6px 0 4px}
+  .est{border:2px solid var(--linha);background:#fff;border-radius:12px;padding:16px 10px;font-size:16px;font-weight:800;cursor:pointer;color:var(--cinza);text-align:center}
+  .est[data-e=conservada].sel{background:var(--verde);color:#fff;border-color:var(--verde)}
+  .est[data-e=desgastada].sel{background:var(--vermelho);color:#fff;border-color:var(--vermelho)}
+  .est[data-e=suja].sel{background:var(--marrom);color:#fff;border-color:var(--marrom)}
+  .est[data-e=inexistente].sel{background:var(--cinza-esc);color:#fff;border-color:var(--cinza-esc)}
+  .barra{height:8px;background:var(--cinza-cl);border-radius:6px;overflow:hidden;margin:4px 0 12px}
+  .barra i{display:block;height:100%;background:var(--verde);width:0;transition:width .25s}
+  .progtxt{font-size:13px;color:var(--cinza);margin-bottom:10px;text-align:center}
+  nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--linha);display:flex;max-width:560px;margin:0 auto;z-index:40;padding-bottom:env(safe-area-inset-bottom,0)}
+  nav button{flex:1;border:none;background:none;padding:11px 4px;font-size:11px;font-weight:700;color:var(--cinza);cursor:pointer}
+  nav button.on{color:var(--verde)}
+  nav button .ic{display:block;font-size:20px;margin-bottom:2px}
+  .toast{position:fixed;bottom:84px;left:50%;transform:translateX(-50%);background:var(--tinta);color:#fff;padding:11px 18px;border-radius:24px;font-size:14px;font-weight:600;z-index:60;opacity:0;transition:opacity .2s;max-width:90%;text-align:center}
+  .toast.show{opacity:.96}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="t" id="hTit">PROSEG · Sinalização Horizontal</div>
+    <div class="s" id="hSub">Levantamento de canalização e inscrições</div>
+  </header>
+  <main>
+    <!-- SELETOR -->
+    <section id="vSel">
+      <div class="cartao">
+        <h2>Selecione o levantamento</h2>
+        <p class="dica">Escolha a rodovia e o material. Na primeira vez, conecte-se à internet para baixar; depois funciona offline.</p>
+        <div id="listaLev"></div>
+      </div>
+    </section>
+
+    <!-- LISTA -->
+    <section id="vLista" class="esconde">
+      <button class="btn btn-sec" style="margin-bottom:12px" onclick="mostraSeletor()">← Trocar levantamento</button>
+      <div class="progtxt" id="progTxt"></div>
+      <div class="barra"><i id="progBar"></i></div>
+      <div class="busca">
+        <input type="text" id="busca" placeholder="Buscar por km ou tipo..." oninput="renderLista()">
+        <button class="btn btn-sec" style="width:auto;padding:13px 16px" onclick="document.getElementById('busca').value='';renderLista()">Limpar</button>
+      </div>
+      <div class="filtros" id="filtros"></div>
+      <div id="listaItens"></div>
+    </section>
+
+    <!-- AVALIAÇÃO -->
+    <section id="vAval" class="esconde">
+      <div class="cartao">
+        <button class="btn btn-sec" style="margin-bottom:14px" onclick="voltarLista()">← Voltar</button>
+        <h2 id="avalTit">Avaliação</h2>
+        <div class="ctx" id="avalCtx"></div>
+        <label class="campo">Estado da sinalização</label>
+        <div class="estados">
+          <button class="est" data-e="conservada" onclick="setEstado('conservada')">Conservada</button>
+          <button class="est" data-e="desgastada" onclick="setEstado('desgastada')">Desgastada</button>
+          <button class="est" data-e="suja" onclick="setEstado('suja')">Suja</button>
+          <button class="est" data-e="inexistente" onclick="setEstado('inexistente')">Inexistente</button>
+        </div>
+        <div class="grupo" style="margin-top:14px">
+          <label class="campo">Observação (opcional)</label>
+          <textarea id="avalObs" placeholder="Ex.: trecho parcial, repintura urgente..." oninput="avalSujo=true"></textarea>
+        </div>
+        <button class="btn btn-primario" onclick="salvarAval()">Salvar avaliação</button>
+        <button class="btn" id="btnLimparAval" style="background:#fff;color:var(--vermelho);border:2px solid var(--vermelho);display:none" onclick="limparAval()">Limpar avaliação</button>
+      </div>
+    </section>
+
+    <!-- EXPORTAR -->
+    <section id="vExport" class="esconde">
+      <div class="cartao">
+        <h2>Resumo da avaliação</h2>
+        <div id="resumoExp"></div>
+      </div>
+      <div class="cartao">
+        <h2>Nota de serviço</h2>
+        <p class="dica">Gera as <b>linhas originais do projeto</b> dos itens avaliados como <b>Desgastada</b> e <b>Inexistente</b> (o que precisa de execução). Cole na sua planilha de nota de serviço.</p>
+        <button class="btn btn-primario" onclick="copiarNS()">📋 Copiar linhas da NS</button>
+      </div>
+      <div class="cartao">
+        <h2>Lista de limpeza</h2>
+        <p class="dica">Itens marcados como <b>Suja</b> (não precisam de repintura, apenas limpeza).</p>
+        <button class="btn btn-linha" onclick="copiarLimpeza()">🧹 Copiar lista de limpeza</button>
+      </div>
+      <div class="cartao">
+        <h2>Avaliação completa</h2>
+        <p class="dica">Todos os itens avaliados, com estado, km e área. Para seu controle.</p>
+        <button class="btn btn-linha" onclick="copiarResumo()">📄 Copiar avaliação completa</button>
+      </div>
+    </section>
+  </main>
+  <nav id="nav" class="esconde">
+    <button id="nLista" class="on" onclick="irPara('lista')"><span class="ic">📋</span>Itens</button>
+    <button id="nExport" onclick="irPara('export')"><span class="ic">📤</span>Exportar</button>
+    <button id="nSel" onclick="mostraSeletor()"><span class="ic">🗂</span>Levantamentos</button>
+  </nav>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ====== IndexedDB ====== */
+var DB=null;
+function idbOpen(){return new Promise(function(res){var r=indexedDB.open("proseg-horiz",1);r.onupgradeneeded=function(e){var db=e.target.result;if(!db.objectStoreNames.contains("ref"))db.createObjectStore("ref");if(!db.objectStoreNames.contains("trab"))db.createObjectStore("trab");};r.onsuccess=function(e){res(e.target.result);};r.onerror=function(){res(null);};});}
+function idbGet(store,key){return new Promise(function(res){if(!DB)return res(null);var t=DB.transaction(store,"readonly").objectStore(store).get(key);t.onsuccess=function(){res(t.result||null);};t.onerror=function(){res(null);};});}
+function idbPut(store,key,val){return new Promise(function(res){if(!DB)return res(false);var t=DB.transaction(store,"readwrite").objectStore(store).put(val,key);t.onsuccess=function(){res(true);};t.onerror=function(){res(false);};});}
+function idbKeys(store){return new Promise(function(res){if(!DB)return res([]);var t=DB.transaction(store,"readonly").objectStore(store).getAllKeys();t.onsuccess=function(){res(t.result||[]);};t.onerror=function(){res([]);};});}
+
+/* ====== Estado global ====== */
+var manifest=[], levAtual=null, itens=[], vAtual="sel", atual=null, filtro="todos", avalSujo=false, estadoSel="";
+var EST={conservada:"Conservada",desgastada:"Desgastada",suja:"Suja",inexistente:"Inexistente"};
+var FAMNOME={canal_branca:"Canalização branca",canal_amarela:"Canalização amarela",faixa_pedestre:"Faixa de pedestre",reducao_velocidade:"Redução de velocidade",retencao:"Linha de retenção",individual:"Legenda/Seta"};
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+function toast(m){var t=document.getElementById("toast");t.textContent=m;t.classList.add("show");clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove("show");},2200);}
+function copiar(txt,msg){function ok(){toast(msg);}if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(ok,function(){fallback(txt);ok();});}else{fallback(txt);ok();}}
+function fallback(txt){var ta=document.createElement("textarea");ta.value=txt;ta.style.position="fixed";ta.style.opacity="0";document.body.appendChild(ta);ta.select();try{document.execCommand("copy");}catch(e){}document.body.removeChild(ta);}
+
+/* ====== Navegação ====== */
+function esconderTudo(){["Sel","Lista","Aval","Export"].forEach(function(s){document.getElementById("v"+s).classList.add("esconde");});}
+function irPara(v){
+  if(vAtual==="aval"&&v!=="aval"&&avalSujo){if(!confirm("Há uma avaliação não salva. Sair sem salvar?"))return;avalSujo=false;}
+  esconderTudo();
+  if(v==="lista"){document.getElementById("vLista").classList.remove("esconde");renderLista();}
+  if(v==="export"){document.getElementById("vExport").classList.remove("esconde");renderResumoExp();}
+  vAtual=v;
+  document.getElementById("nLista").classList.toggle("on",v==="lista");
+  document.getElementById("nExport").classList.toggle("on",v==="export");
+  window.scrollTo(0,0);
+}
+
+/* ====== Seletor de levantamento ====== */
+async function carregaManifest(){
+  var m=null;
+  try{var r=await fetch("dados/manifest.json",{cache:"no-store"});if(r.ok){m=await r.json();await idbPut("ref","__manifest__",m);}}catch(e){}
+  if(!m)m=await idbGet("ref","__manifest__");
+  manifest=m||[];
+}
+async function mostraSeletor(){
+  esconderTudo();document.getElementById("vSel").classList.remove("esconde");
+  document.getElementById("nav").classList.add("esconde");
+  document.getElementById("hTit").textContent="PROSEG · Sinalização Horizontal";
+  document.getElementById("hSub").textContent="Selecione o levantamento";
+  vAtual="sel";levAtual=null;
+  if(!manifest.length)await carregaManifest();
+  var baixados=DB?await idbKeys("trab"):[];
+  var alvo=document.getElementById("listaLev");
+  if(!manifest.length){alvo.innerHTML='<div class="vazio">Não foi possível carregar a lista. Conecte-se à internet uma vez para baixar.</div>';return;}
+  alvo.innerHTML=manifest.map(function(it){
+    var on=baixados.indexOf(it.arquivo)>=0;
+    return '<div class="lev" onclick="abrirLevantamento(\''+it.arquivo+'\')">'+
+      '<div><div class="nome">'+esc(it.rodovia)+'</div><div class="det">'+esc(it.material)+' · '+it.nItens+' itens</div></div>'+
+      '<div class="selo '+(on?"on":"off")+'">'+(on?"OFFLINE ✓":"BAIXAR")+'</div></div>';
+  }).join("");
+}
+async function abrirLevantamento(arquivo){
+  var trab=DB?await idbGet("trab",arquivo):null;
+  if(trab){ itens=trab; }
+  else{
+    var ref=DB?await idbGet("ref",arquivo):null;
+    if(!ref){
+      try{var r=await fetch(arquivo,{cache:"no-store"});if(r.ok){ref=await r.json();await idbPut("ref",arquivo,ref);}}catch(e){}
+    }
+    if(!ref){toast("Sem internet e ainda não baixado");return;}
+    itens=ref.itens.map(function(o){var c=Object.assign({},o);c.estado="";c.obs="";return c;});
+    await idbPut("trab",arquivo,itens);
+  }
+  var meta=manifest.find(function(m){return m.arquivo===arquivo;})||{};
+  levAtual={arquivo:arquivo,rodovia:meta.rodovia,material:meta.material};
+  document.getElementById("hTit").textContent=esc(meta.rodovia||"Levantamento");
+  document.getElementById("hSub").textContent=esc(meta.material||"");
+  document.getElementById("nav").classList.remove("esconde");
+  filtro="todos";document.getElementById("busca").value="";
+  irPara("lista");
+}
+async function persist(){ if(levAtual) await idbPut("trab",levAtual.arquivo,itens); }
+
+/* ====== Lista ====== */
+function contagem(){var c={todos:itens.length,nao:0,conservada:0,desgastada:0,suja:0,inexistente:0};itens.forEach(function(it){if(!it.estado)c.nao++;else c[it.estado]++;});return c;}
+function setFiltro(f,el){filtro=f;document.querySelectorAll("#filtros .chip").forEach(function(c){c.classList.remove("ativo");});el.classList.add("ativo");renderLista();}
+function renderChips(){
+  var c=contagem();
+  var defs=[["todos","Todos",c.todos],["nao","Não avaliados",c.nao],["desgastada","Desgastada",c.desgastada],["inexistente","Inexistente",c.inexistente],["suja","Suja",c.suja],["conservada","Conservada",c.conservada]];
+  document.getElementById("filtros").innerHTML=defs.map(function(d){
+    return '<button class="chip '+(filtro===d[0]?"ativo":"")+'" onclick="setFiltro(\''+d[0]+'\',this)">'+d[1]+' <b>'+d[2]+'</b></button>';
+  }).join("");
+}
+function progresso(){var c=contagem();var aval=c.todos-c.nao;var pct=c.todos?Math.round(aval/c.todos*100):0;document.getElementById("progBar").style.width=pct+"%";document.getElementById("progTxt").textContent=aval+" de "+c.todos+" itens avaliados ("+pct+"%)";}
+function renderLista(){
+  renderChips();progresso();
+  var q=(document.getElementById("busca").value||"").toLowerCase().trim();
+  var arr=itens.filter(function(it){
+    if(filtro==="nao"&&it.estado)return false;
+    if(filtro!=="todos"&&filtro!=="nao"&&it.estado!==filtro)return false;
+    if(q){var alvo=(it.titulo+" "+it.kmIniFmt+" "+it.kmFimFmt+" "+(it.cods||[]).join(" ")+" "+it.desc).toLowerCase();if(alvo.indexOf(q)<0)return false;}
+    return true;
+  });
+  var alvo=document.getElementById("listaItens");
+  if(!arr.length){alvo.innerHTML='<div class="vazio">Nenhum item neste filtro.</div>';return;}
+  alvo.innerHTML=arr.map(function(it){
+    var cls=it.estado||"";
+    var badge=it.estado?EST[it.estado]:"Avaliar";
+    var sub=FAMNOME[it.familia]+" · "+it.area+" m² · "+it.nLin+" linha"+(it.nLin>1?"s":"");
+    return '<div class="item '+cls+'" onclick="abrirAval(\''+it.id+'\')">'+
+      '<div class="faixa"></div>'+
+      '<div class="corpo"><div class="tit">'+esc(it.titulo)+'</div><div class="sub">'+esc(sub)+'</div></div>'+
+      '<div class="badge">'+esc(badge)+'</div></div>';
+  }).join("");
+}
+
+/* ====== Avaliação ====== */
+function abrirAval(id){
+  var it=itens.find(function(x){return x.id===id;});if(!it)return;
+  atual=id;estadoSel=it.estado||"";avalSujo=false;
+  document.getElementById("avalTit").textContent=it.titulo;
+  var faixaKm=it.kmIniFmt+(it.familia==="canal_branca"||it.familia==="canal_amarela"||it.familia==="reducao_velocidade"?(" ao "+it.kmFimFmt):"");
+  document.getElementById("avalCtx").innerHTML=
+    "<b>"+esc(FAMNOME[it.familia])+"</b>"+
+    '<div class="grid"><span>KM: <b>'+esc(faixaKm)+'</b></span><span>Área: <b>'+esc(it.area)+'</b> m²</span>'+
+    '<span>Linhas projeto: <b>'+it.nLin+'</b></span><span>Eixo: <b>'+esc(it.eixo||"--")+'</b></span>'+
+    '<span>Tipo: <b>'+esc((it.cods||[]).join(", "))+'</b></span></div>';
+  document.querySelectorAll(".est").forEach(function(b){b.classList.toggle("sel",b.getAttribute("data-e")===estadoSel);});
+  document.getElementById("avalObs").value=it.obs||"";
+  document.getElementById("btnLimparAval").style.display=it.estado?"":"none";
+  esconderTudo();document.getElementById("vAval").classList.remove("esconde");vAtual="aval";window.scrollTo(0,0);
+}
+function setEstado(e){estadoSel=e;avalSujo=true;document.querySelectorAll(".est").forEach(function(b){b.classList.toggle("sel",b.getAttribute("data-e")===e);});}
+function salvarAval(){
+  var it=itens.find(function(x){return x.id===atual;});if(!it)return;
+  if(!estadoSel){toast("Escolha o estado da sinalização");return;}
+  it.estado=estadoSel;it.obs=document.getElementById("avalObs").value.trim();
+  persist();avalSujo=false;toast("Avaliação salva ✓");irPara("lista");
+}
+function limparAval(){
+  var it=itens.find(function(x){return x.id===atual;});if(!it)return;
+  if(!confirm("Limpar a avaliação deste item?"))return;
+  it.estado="";it.obs="";persist();avalSujo=false;toast("Avaliação removida");irPara("lista");
+}
+function voltarLista(){avalSujo=false;irPara("lista");}
+
+/* ====== Exportação ====== */
+var COLS_NS=["Figura","Código","Descrição","Lat inicial","Long inicial","Km inicial","Lat final","Long final","Km final","Eixo","Material","Espessura (mm)","Área (m²)"];
+function linhaDet(d){return [d.fig,d.cod,d.desc,d.latI,d.lonI,d.kmI,d.latF,d.lonF,d.kmF,d.eixo,d.mat,d.esp,d.area];}
+function copiarNS(){
+  var sel=itens.filter(function(it){return it.estado==="desgastada"||it.estado==="inexistente";});
+  if(!sel.length){toast("Nenhum item Desgastada/Inexistente");return;}
+  var linhas=[COLS_NS.concat(["Estado","Item avaliado"]).join("\t")];
+  sel.forEach(function(it){
+    it.detalhe.forEach(function(d){
+      linhas.push(linhaDet(d).concat([EST[it.estado],it.titulo]).map(function(v){return v==null?"":(""+v);}).join("\t"));
+    });
+  });
+  var nl=linhas.length-1;
+  copiar(linhas.join("\n"), nl+" linhas da NS copiadas — cole na sua planilha");
+}
+function copiarLimpeza(){
+  var sel=itens.filter(function(it){return it.estado==="suja";});
+  if(!sel.length){toast("Nenhum item marcado como Suja");return;}
+  var linhas=[["Item","Tipo","Km inicial","Km final","Área (m²)","Observação"].join("\t")];
+  sel.forEach(function(it){linhas.push([it.titulo,FAMNOME[it.familia],it.kmIniFmt,it.kmFimFmt,it.area,it.obs||""].join("\t"));});
+  copiar(linhas.join("\n"), sel.length+" itens de limpeza copiados");
+}
+function copiarResumo(){
+  var sel=itens.filter(function(it){return it.estado;});
+  if(!sel.length){toast("Nenhum item avaliado ainda");return;}
+  var linhas=[["Item","Tipo","Km inicial","Km final","Área (m²)","Estado","Observação"].join("\t")];
+  sel.forEach(function(it){linhas.push([it.titulo,FAMNOME[it.familia],it.kmIniFmt,it.kmFimFmt,it.area,EST[it.estado],it.obs||""].join("\t"));});
+  copiar(linhas.join("\n"), sel.length+" itens copiados");
+}
+function renderResumoExp(){
+  var c=contagem();
+  var areaNS=itens.filter(function(it){return it.estado==="desgastada"||it.estado==="inexistente";}).reduce(function(s,it){return s+(parseFloat(it.area)||0);},0);
+  document.getElementById("resumoExp").innerHTML=
+    '<div class="ctx"><div class="grid">'+
+    '<span>Avaliados: <b>'+(c.todos-c.nao)+' / '+c.todos+'</b></span>'+
+    '<span>Conservada: <b>'+c.conservada+'</b></span>'+
+    '<span>Desgastada: <b>'+c.desgastada+'</b></span>'+
+    '<span>Inexistente: <b>'+c.inexistente+'</b></span>'+
+    '<span>Suja: <b>'+c.suja+'</b></span>'+
+    '<span>Não avaliados: <b>'+c.nao+'</b></span>'+
+    '</div><div style="margin-top:8px">Área a executar (NS): <b>'+(Math.round(areaNS*100)/100)+'</b> m²</div></div>';
+}
+
+/* ====== Início ====== */
+(async function(){
+  DB=await idbOpen();
+  await carregaManifest();
+  mostraSeletor();
+  if("serviceWorker" in navigator){try{navigator.serviceWorker.register("sw.js");}catch(e){}}
+})();
+</script>
+</body>
+</html>

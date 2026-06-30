@@ -1,0 +1,25 @@
+{
+  "name": "PROSEG · Sinalização Horizontal",
+  "short_name": "Sinalização H",
+  "description": "Levantamento e avaliação de canalização e inscrições no pavimento",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0B6B3A",
+  "theme_color": "#0B6B3A",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='34' fill='%230B6B3A'/%3E%3Crect x='40' y='44' width='112' height='20' rx='4' fill='%23fff'/%3E%3Crect x='40' y='86' width='112' height='20' rx='4' fill='%23F2B705'/%3E%3Crect x='40' y='128' width='70' height='20' rx='4' fill='%23fff'/%3E%3C/svg%3E",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='90' fill='%230B6B3A'/%3E%3Crect x='106' y='118' width='300' height='52' rx='10' fill='%23fff'/%3E%3Crect x='106' y='230' width='300' height='52' rx='10' fill='%23F2B705'/%3E%3Crect x='106' y='342' width='188' height='52' rx='10' fill='%23fff'/%3E%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

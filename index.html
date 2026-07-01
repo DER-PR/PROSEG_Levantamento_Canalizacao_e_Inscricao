@@ -80,6 +80,8 @@
   .est[data-e=suja].sel{background:var(--marrom);color:#fff;border-color:var(--marrom)}
   .est[data-e=inexistente].sel{background:var(--cinza-esc);color:#fff;border-color:var(--cinza-esc)}
   .barra{height:8px;background:var(--cinza-cl);border-radius:6px;overflow:hidden;margin:4px 0 12px}
+  .dlbar{height:8px;background:var(--cinza-cl);border-radius:6px;overflow:hidden;margin-top:10px}
+  .dlbar i{display:block;height:100%;background:var(--verde);width:0;transition:width .2s}
   .barra i{display:block;height:100%;background:var(--verde);width:0;transition:width .25s}
   .progtxt{font-size:13px;color:var(--cinza);margin-bottom:10px;text-align:center}
   nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--linha);display:flex;max-width:560px;margin:0 auto;z-index:40;padding-bottom:env(safe-area-inset-bottom,0)}
@@ -102,6 +104,8 @@
       <div class="cartao">
         <h2>Selecione a rodovia</h2>
         <p class="dica">Escolha a rodovia. Na primeira vez, conecte-se à internet para baixar; depois funciona offline.</p>
+        <button class="btn btn-primario" id="btnBaixarTodas" style="margin-bottom:12px" onclick="baixarTodasH()">⬇ Baixar todas para uso offline</button>
+        <div class="dlbar esconde" id="dlBar"><i id="dlFill"></i></div>
         <div id="listaLev"></div>
       </div>
     </section>
@@ -217,6 +221,30 @@ async function carregaManifest(){
   try{var r=await fetch("dados/manifest.json",{cache:"no-store"});if(r.ok){m=await r.json();await idbPut("ref","__manifest__",m);}}catch(e){}
   if(!m)m=await idbGet("ref","__manifest__");
   manifest=m||[];
+}
+async function garantirBaixado(arquivo){
+  var trab=DB?await idbGet("trab",arquivo):null;
+  if(trab) return true;
+  var ref=DB?await idbGet("ref",arquivo):null;
+  if(!ref){ try{var r=await fetch(arquivo,{cache:"no-store"});if(!r.ok)throw 0;ref=await r.json();if(DB)await idbPut("ref",arquivo,ref);}catch(e){return false;} }
+  if(!ref) return false;
+  var novo=ref.itens.map(function(o){var c=Object.assign({},o);c.estado="";c.obs="";return c;});
+  if(DB) await idbPut("trab",arquivo,novo);
+  return true;
+}
+async function baixarTodasH(){
+  if(!manifest.length){ await carregaManifest(); }
+  if(!manifest.length){ toast("Lista de rodovias indisponível"); return; }
+  var btn=document.getElementById("btnBaixarTodas"); btn.disabled=true; var txtOrig=btn.textContent; btn.textContent="Baixando...";
+  var bar=document.getElementById("dlBar"), fill=document.getElementById("dlFill"); bar.classList.remove("esconde");
+  var ok=0;
+  for(var i=0;i<manifest.length;i++){
+    if(await garantirBaixado(manifest[i].arquivo)) ok++;
+    fill.style.width=Math.round((i+1)/manifest.length*100)+"%";
+  }
+  btn.disabled=false; btn.textContent=txtOrig;
+  toast(ok+" de "+manifest.length+" rodovias salvas offline");
+  mostraSeletor();
 }
 async function mostraSeletor(){
   esconderTudo();document.getElementById("vSel").classList.remove("esconde");

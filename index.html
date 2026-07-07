@@ -196,7 +196,7 @@ function idbPut(store,key,val){return new Promise(function(res){if(!DB)return re
 function idbKeys(store){return new Promise(function(res){if(!DB)return res([]);var t=DB.transaction(store,"readonly").objectStore(store).getAllKeys();t.onsuccess=function(){res(t.result||[]);};t.onerror=function(){res([]);};});}
 
 /* ====== Estado global ====== */
-var manifest=[], levAtual=null, itens=[], materiais=[], matFiltro="ambos", vAtual="sel", atual=null, filtro="todos", avalSujo=false, estadoSel="";
+var manifest=[], levAtual=null, itens=[], materiais=[], matFiltro="ambos", vAtual="sel", atual=null, filtro="todos", avalSujo=false, estadoSel="", scrollLista=0;
 var EST={conservada:"Conservada",desgastada:"Desgastada",suja:"Suja",inexistente:"Inexistente"};
 var FAMNOME={canal_branca:"Canalização branca",canal_amarela:"Canalização amarela",faixa_pedestre:"Faixa de pedestre",reducao_velocidade:"Redução de velocidade",retencao:"Linha de retenção",individual:"Legenda/Seta"};
 function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
@@ -320,6 +320,7 @@ function renderLista(){
 /* ====== Avaliação ====== */
 function abrirAval(id){
   var it=itens.find(function(x){return x.id===id;});if(!it)return;
+  scrollLista=window.scrollY||document.documentElement.scrollTop||0;
   atual=id;estadoSel=it.estado||"";avalSujo=false;
   document.getElementById("avalTit").textContent=it.titulo;
   var faixaKm=it.kmIniFmt+(it.familia==="canal_branca"||it.familia==="canal_amarela"||it.familia==="reducao_velocidade"?(" ao "+it.kmFimFmt):"");
@@ -342,14 +343,16 @@ function salvarAval(){
   if(!estadoSel){toast("Escolha o estado da sinalização");return;}
   it.estado=estadoSel;it.obs=document.getElementById("avalObs").value.trim();
   it.dataHora=new Date().toLocaleString("pt-BR");
-  persist();avalSujo=false;toast("Avaliação salva ✓");irPara("lista");
+  persist();avalSujo=false;toast("Avaliação salva ✓");irListaScroll();
 }
 function limparAval(){
   var it=itens.find(function(x){return x.id===atual;});if(!it)return;
   if(!confirm("Limpar a avaliação deste item?"))return;
-  it.estado="";it.obs="";persist();avalSujo=false;toast("Avaliação removida");irPara("lista");
+  it.estado="";it.obs="";persist();avalSujo=false;toast("Avaliação removida");irListaScroll();
 }
-function voltarLista(){avalSujo=false;irPara("lista");}
+function voltarLista(){avalSujo=false;irListaScroll();}
+/* volta para a lista mantendo a posição de rolagem em que o usuário estava */
+function irListaScroll(){irPara("lista");requestAnimationFrame(function(){window.scrollTo(0,scrollLista);});}
 
 /* ====== Foto georreferenciada ====== */
 var fotoGps=null;

@@ -462,18 +462,18 @@ var fotoGps=null;
 function atualizaFotoSec(){var m=(estadoSel==="desgastada"||estadoSel==="inexistente");var el=document.getElementById("fotoSec");if(el)el.style.display=m?"":"none";}
 function sugereFoto(){var n=itens.map(function(x){return parseInt(x.foto,10);}).filter(function(v){return !isNaN(v);});return n.length?Math.max.apply(null,n)+1:1;}
 function kmDoItem(it){return it.kmIniFmt+((it.familia==="canal_branca"||it.familia==="canal_amarela"||it.familia==="reducao_velocidade")?(" ao "+it.kmFimFmt):"");}
+var gpsPromise=null;
+function pedirGPS(){
+  fotoGps=null;
+  if(!navigator.geolocation){ gpsPromise=Promise.resolve(null); return; }
+  gpsPromise=new Promise(function(resolve){
+    navigator.geolocation.getCurrentPosition(function(pos){ fotoGps={lat:pos.coords.latitude,lng:pos.coords.longitude,acc:Math.round(pos.coords.accuracy)}; resolve(fotoGps); },function(){ fotoGps=null; resolve(null); },{enableHighAccuracy:true,timeout:15000,maximumAge:8000});
+  });
+}
 function tirarFoto(){
   var it=itens.find(function(x){return x.id===atual;}); if(!it)return;
-  fotoGps=null;
-  if(!navigator.geolocation){ document.getElementById("fFotoCam").click(); return; }
-  toast("\ud83d\udccd Obtendo GPS\u2026 aguarde");
-  navigator.geolocation.getCurrentPosition(function(pos){
-    fotoGps={lat:pos.coords.latitude,lng:pos.coords.longitude,acc:Math.round(pos.coords.accuracy)};
-    toast("\ud83d\udccd GPS OK \u2014 abrindo c\u00e2mera"); document.getElementById("fFotoCam").click();
-  },function(){
-    fotoGps=null;
-    if(confirm("N\u00e3o consegui o GPS agora (sinal fraco?). Tirar a foto mesmo assim, SEM coordenada?")) document.getElementById("fFotoCam").click();
-  },{enableHighAccuracy:true,timeout:15000,maximumAge:8000});
+  pedirGPS();
+  document.getElementById("fFotoCam").click();   // abre a c\u00e2mera no MESMO toque (exig\u00eancia do iOS)
 }
 function processaFoto(input){
   var file=input.files&&input.files[0]; if(!file){input.value="";return;}
@@ -482,11 +482,12 @@ function processaFoto(input){
   var reader=new FileReader();
   reader.onload=function(e){
     var img=new Image();
-    img.onload=function(){
+    img.onload=async function(){
       var maxE=1600,w=img.width,h=img.height,s=Math.min(1,maxE/Math.max(w,h));
       var cw=Math.round(w*s),ch=Math.round(h*s);
       var cv=document.createElement("canvas");cv.width=cw;cv.height=ch;
       var ctx=cv.getContext("2d");ctx.drawImage(img,0,0,cw,ch);
+      if(gpsPromise){try{await gpsPromise;}catch(_e){}}   // garante o GPS antes de carimbar
       var g=fotoGps;
       desenhaCarimbo(ctx,cw,ch,{g:g,rod:(levAtual&&levAtual.rodovia)||"",km:kmDoItem(it),idx:idx,desc:FAMNOME[it.familia]});
       var full=cv.toDataURL("image/jpeg",0.85);
